@@ -40,7 +40,7 @@ class KnpLastTweetsExtension extends Extension
             $driver = strtolower($fetcherConfig['driver']);
         }
 
-        if (!in_array($driver, array('oauth', 'api', 'zend_cache', 'array'))) {
+        if (!in_array($driver, array('oauth', 'api', 'zend_cache', 'redis_cache', 'array'))) {
             throw new \InvalidArgumentException('Invalid knp_last_tweets driver specified');
         }
 
@@ -76,6 +76,26 @@ class KnpLastTweetsExtension extends Extension
             }
             if (!empty($driverOptions['cache_name'])) {
                 $container->setParameter('knp_last_tweets.last_tweets_fetcher.zend_cache.cache_name', $driverOptions['cache_name']);
+            }
+        }
+
+        if ('redis_cache' === $driver) {
+            if (isset($fetcherConfig['options'])) {
+                $driverOptions = $fetcherConfig['options'];
+
+                if (isset($driverOptions['method'])) {
+                    if (!in_array($driverOptions['method'], array('oauth', 'api'))) {
+                        throw new \InvalidArgumentException('Invalid API driver specified ('.$driverOptions['method'].'), available are: "oauth", "api"');
+                    }
+
+                    $loader->load($driverOptions['method'] . '.yml');
+
+                    $container->setAlias('knp_last_tweets.last_tweets_additional_fetcher', 'knp_last_tweets.last_tweets_fetcher.' . $driverOptions['method']);
+                } else {
+                    $container->setAlias('knp_last_tweets.last_tweets_additional_fetcher', 'knp_last_tweets.last_tweets_fetcher.api');
+                }
+            } else {
+                throw new \InvalidArgumentException('You must set the options array and fetch method');
             }
         }
 

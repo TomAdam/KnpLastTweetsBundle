@@ -114,6 +114,32 @@ knp_last_tweets:
 
 This will only call the twitter api after a minimum of 300 seconds.
 
+### Redis Cache driver
+
+The `redis_cache` driver uses Redis memory storage to cache the last tweets.
+
+You will need to install [SncRedisBundle](https://github.com/snc/SncRedisBundle) first
+and configure it:
+
+```jinja
+# app/config.yml
+
+snc_redis:
+    clients:
+        default:
+            type: predis
+            alias: default
+            dsn: redis://localhost
+
+knp_last_tweets:
+    fetcher:
+        driver: redis_cache
+        options:
+            method: api // or oauth
+```
+
+This will only call the twitter api if there are no tweets for this set up in the Redis cache! You must use the force-fetch command if using this method.
+
 #### The force-fetch command
 
 Caching is good. But once in a while (well one every 5 minutes in the previous case and if you have a continuous flow a visits), one of your visitor will have to wait 2 unnecessary seconds while the server calls twitter API.

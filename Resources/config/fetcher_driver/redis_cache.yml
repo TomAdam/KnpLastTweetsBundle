@@ -1,0 +1,12 @@
+imports:
+  - { resource: api.yml }
+
+parameters:
+    knp_last_tweets.last_tweets_fetcher.redis_cache.class: Knp\Bundle\LastTweetsBundle\Twitter\LastTweetsFetcher\RedisCacheFetcher
+
+services:
+    knp_last_tweets.last_tweets_fetcher.redis_cache:
+        class: %knp_last_tweets.last_tweets_fetcher.redis_cache.class%
+        arguments:
+            - @knp_last_tweets.last_tweets_additional_fetcher
+            - @snc_redis.default
