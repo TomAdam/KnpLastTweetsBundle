@@ -56,7 +56,7 @@ EOT
             $output->writeln(
                 '<error>You\'re using the twitter fetcher driver "'.get_class($twitter)."\"\n".
                 "This command only works if the driver is cacheable.\n".
-                'Use zend_cache for example.</error>');
+                'Use zend_cache or redis_cache.</error>');
             return;
         }
 
@@ -67,7 +67,7 @@ EOT
         $output->writeln('Fetching the <info>'.$limit.'</info> last tweets of <info>' . implode(', ', $usernames) . '</info>');
 
         try {
-            $tweets = $twitter->forceFetch($usernames, $limit, true);
+            $tweets = $twitter->forceFetch($usernames, $limit);
         } catch (TwitterException $e) {
             $output->writeln('<error>Unable to fetch last tweets: '.$e->getMessage().'</error>');
         }
