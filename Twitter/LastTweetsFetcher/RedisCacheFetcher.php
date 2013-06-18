@@ -21,7 +21,7 @@ class RedisCacheFetcher implements FetcherCacheableInterface
             $username = array((string) $username);
         }
 
-        $cacheId = 'knp_last_tweets_' . strtolower(implode('_', $username)) . '_' . $limit;
+        $cacheId = 'knp_last_tweets:' . strtolower(implode('_', $username)) . ':' . $limit;
 
         $encodedTweets = $this->redisClient->get($cacheId);
         

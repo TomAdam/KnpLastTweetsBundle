@@ -9,4 +9,4 @@ services:
         class: %knp_last_tweets.last_tweets_fetcher.redis_cache.class%
         arguments:
             - @knp_last_tweets.last_tweets_additional_fetcher
-            - @snc_redis.default
+            - @knp_last_tweets.redis_cache_client

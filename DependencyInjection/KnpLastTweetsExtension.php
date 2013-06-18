@@ -94,6 +94,8 @@ class KnpLastTweetsExtension extends Extension
                 } else {
                     $container->setAlias('knp_last_tweets.last_tweets_additional_fetcher', 'knp_last_tweets.last_tweets_fetcher.api');
                 }
+
+                $container->setAlias('knp_last_tweets.redis_cache_client', $driverOptions['redis_client']);
             } else {
                 throw new \InvalidArgumentException('You must set the options array and fetch method');
             }
