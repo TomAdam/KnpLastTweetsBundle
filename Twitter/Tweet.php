@@ -13,7 +13,7 @@ class Tweet
 
     public function __construct(array $object)
     {
-        $this->id = $object['id'];
+        $this->id = (string) $object['id'];
         $this->createdAt = new \DateTime($object['created_at']);
         $this->text = $object['text'];
         $this->username = $object['username'];
@@ -50,12 +50,12 @@ class Tweet
     {
         return sprintf('https://twitter.com/%s/status/%s', $this->getUsername(), $this->getId());
     }
-    
+
     public function isReply()
     {
         return $this->isReply;
     }
-    
+
     public function isRetweet()
     {
         return $this->isRetweet;
