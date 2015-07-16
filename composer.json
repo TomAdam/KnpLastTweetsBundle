@@ -19,35 +19,19 @@
 
     "require": {
         "php":                      ">=5.3.2",
-        "symfony/framework-bundle": ">=2.0,<2.3-dev",
-        "symfony/yaml":             ">=2.0,<2.3-dev",
+        "symfony/framework-bundle": ">=2.0",
+        "symfony/yaml":             ">=2.0",
         "kriswallsmith/buzz":       ">=v0.5",
-        "twig/twig":                ">=1.6.5"
+        "twig/twig":                ">=1.6.5",
+        "inori/twitter-app-bundle": "*"
     },
 
     "require-dev": {
         "knplabs/knp-zend-cache-bundle": "*",
-        "inori/twitter-app-bundle": "*",
         "doctrine/cache": "*"
     },
 
     "repositories": [
-        {
-            "type": "package",
-            "package": {
-                "name": "abraham/twitteroauth",
-                "version": "dev-master",
-                "dist": {
-                    "url": "https://github.com/abraham/twitteroauth/zipball/master",
-                    "type": "zip"
-                },
-                "source": {
-                    "url": "git://github.com/abraham/twitteroauth.git",
-                    "type": "git",
-                    "reference": "master"
-                }
-            }
-        },
         {
             "type": "package",
             "package": {

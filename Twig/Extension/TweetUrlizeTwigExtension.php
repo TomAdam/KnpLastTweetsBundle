@@ -22,7 +22,7 @@ class TweetUrlizeTwigExtension extends \Twig_Extension
 
     public function filterTweet($text, $target = null)
     {
-        return TweetUrlizeHelper::urlize($text);
+        return TweetUrlizeHelper::urlize($text, $target);
     }
 
     public function getName()

@@ -12,15 +12,17 @@ class TweetUrlizeHelper implements HelperInterface
      * Replace urls, #hastags and @mentions by their urls
      *
      * @param string $text A tweet message
-     *
-     * @return string      The "urlized" tweet
+     * @param null   $target
+     * 
+     * @return string The "urlized" tweet
      */
-    public static function urlize($text)
+    static public function urlize($text, $target = null)
     {
-        $text = preg_replace("#(^|[\n ])([\w]+?://[\w]+[^ \"\n\r\t< ]*)#", "\\1<a href=\"\\2\">\\2</a>", $text);
-        $text = preg_replace("#(^|[\n ])((www|ftp)\.[^ \"\t\n\r< ]*)#", "\\1<a href=\"http://\\2\">\\2</a>", $text);
-        $text = preg_replace("/@(\w+)/", "<a href=\"http://twitter.com/\\1\">@\\1</a>", $text);
-        $text = preg_replace("/([^&]|^)#(\w+)/", "\\1<a href=\"http://twitter.com/search/\\2\">#\\2</a>", $text);
+        $target = $target === null ? '' : ' target="' . $target . '"';
+        $text = preg_replace("#(^|[\n ])([\w]+?://[\w]+[^ \"\n\r\t< ]*)#", "\\1<a href=\"\\2\"".$target.">\\2</a>", $text);
+        $text = preg_replace("#(^|[\n ])((www|ftp)\.[^ \"\t\n\r< ]*)#", "\\1<a href=\"http://\\2\"".$target.">\\2</a>", $text);
+        $text = preg_replace("/@(\w+)/", "<a href=\"http://twitter.com/\\1\"".$target.">@\\1</a>", $text);
+        $text = preg_replace("/([^&]|^)#(\w+)/", "\\1<a href=\"http://twitter.com/search/\\2\"".$target.">#\\2</a>", $text);
 
         return $text;
     }
