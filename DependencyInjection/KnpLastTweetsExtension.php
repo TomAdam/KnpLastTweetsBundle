@@ -2,8 +2,11 @@
 
 namespace Knp\Bundle\LastTweetsBundle\DependencyInjection;
 
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
+use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\DependencyInjection\Loader;
 
@@ -24,6 +27,7 @@ class KnpLastTweetsExtension extends Extension
 
         // Load twig
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
+        $loader->load('helper.yml');
         $loader->load('twig.yml');
 
         // Try to load Buzz service if not found
@@ -40,65 +44,55 @@ class KnpLastTweetsExtension extends Extension
             $driver = strtolower($fetcherConfig['driver']);
         }
 
-        if (!in_array($driver, array('oauth', 'api', 'zend_cache', 'redis_cache', 'array'))) {
-            throw new \InvalidArgumentException('Invalid knp_last_tweets driver specified');
+        if (!in_array($driver, array('oauth', 'api', 'zend_cache', 'redis_cache', 'array', 'doctrine_cache'))) {
+            throw new InvalidConfigurationException('Invalid knp_last_tweets driver specified');
         }
 
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config/fetcher_driver'));
-
-        if (
-            ('oauth' === $driver
-            || (isset($fetcherConfig['options']['method']) && 'oauth' === $fetcherConfig['options']['method']))
-            && !$this->oauthExists()
-        ) {
-            throw new \InvalidArgumentException('You should install and enable InoriTwitterBundle');
-        }
-
         $loader->load($driver . '.yml');
 
-        if ('zend_cache' === $driver) {
-            $driverOptions = array();
-            if (isset($fetcherConfig['options'])) {
-                $driverOptions = $fetcherConfig['options'];
-
-                if (isset($driverOptions['method'])) {
-
-                    if (!in_array($driverOptions['method'], array('oauth', 'api'))) {
-                        throw new \InvalidArgumentException('Invalid API driver specified ('.$driverOptions['method'].'), available are: "oauth", "api"');
-                    }
-
-                    $loader->load($driverOptions['method'] . '.yml');
-
-                    $container->setAlias('knp_last_tweets.last_tweets_additional_fetcher', 'knp_last_tweets.last_tweets_fetcher.' . $driverOptions['method']);
-                } else {
-                    $container->setAlias('knp_last_tweets.last_tweets_additional_fetcher', 'knp_last_tweets.last_tweets_fetcher.api');
+        switch ($driver) {
+            case 'oauth' :
+                if (!$this->oauthExists()) {
+                    throw new InvalidConfigurationException('oauth fetcher requires "inori/twitter-app-bundle"');
                 }
-            }
-            if (!empty($driverOptions['cache_name'])) {
-                $container->setParameter('knp_last_tweets.last_tweets_fetcher.zend_cache.cache_name', $driverOptions['cache_name']);
-            }
-        }
-
-        if ('redis_cache' === $driver) {
-            if (isset($fetcherConfig['options'])) {
-                $driverOptions = $fetcherConfig['options'];
-
-                if (isset($driverOptions['method'])) {
-                    if (!in_array($driverOptions['method'], array('oauth', 'api'))) {
-                        throw new \InvalidArgumentException('Invalid API driver specified ('.$driverOptions['method'].'), available are: "oauth", "api"');
-                    }
-
-                    $loader->load($driverOptions['method'] . '.yml');
-
-                    $container->setAlias('knp_last_tweets.last_tweets_additional_fetcher', 'knp_last_tweets.last_tweets_fetcher.' . $driverOptions['method']);
-                } else {
-                    $container->setAlias('knp_last_tweets.last_tweets_additional_fetcher', 'knp_last_tweets.last_tweets_fetcher.api');
+                break;
+            case 'zend_cache' :
+                if (!$this->zendCacheExists()) {
+                    throw new InvalidConfigurationException('zend_cache fetcher needs that you install "knplabs/knp-zend-cache-bundle"');
                 }
 
-                $container->setAlias('knp_last_tweets.redis_cache_client', $driverOptions['redis_client']);
-            } else {
-                throw new \InvalidArgumentException('You must set the options array and fetch method');
-            }
+                $driverOptions = $this->setRealFetcherForCacheFetcher($container, $fetcherConfig, $loader);
+
+                if (!empty($driverOptions['cache_name'])) {
+                    $container->setParameter('knp_last_tweets.last_tweets_fetcher.zend_cache.cache_name', $driverOptions['cache_name']);
+                }
+                break;
+            case 'doctrine_cache' :
+                if (!$this->doctrineCacheExists()) {
+                    throw new InvalidConfigurationException('doctrine_cache fetcher needs that you install "doctrine/cache"');
+                }
+
+                $driverOptions = $this->setRealFetcherForCacheFetcher($container, $fetcherConfig, $loader);
+
+                if (!empty($driverOptions['cache_service'])) {
+                    $definition = $container->getDefinition('knp_last_tweets.last_tweets_fetcher.doctrine_cache');
+                    $definition->addArgument(new Reference($driverOptions['cache_service']));
+                } else {
+                    throw new InvalidConfigurationException('you must specify the "cache_service" key under "options" which should point to a valid doctrine cache');
+                }
+                break;
+            case 'redis_cache':
+                if (!$this->redisCacheExists()) {
+                    throw new InvalidConfigurationException('redis_cache fetcher needs that you install a redis client');
+                }
+
+                $driverOptions = $this->setRealFetcherForCacheFetcher($container, $fetcherConfig, $loader);
+
+                if (!empty($driverOptions['cache_name'])) {
+                    $container->setParameter('knp_last_tweets.last_tweets_fetcher.redis_cache.cache_name', $driverOptions['cache_name']);
+                }
+                break;
         }
 
         $container->setAlias('knp_last_tweets.last_tweets_fetcher', 'knp_last_tweets.last_tweets_fetcher.' . $driver);
@@ -107,5 +101,45 @@ class KnpLastTweetsExtension extends Extension
     protected function oauthExists()
     {
         return class_exists('Inori\TwitterAppBundle\Services\TwitterApp');
+    }
+
+    protected function doctrineCacheExists()
+    {
+        return class_exists('Doctrine\Common\Cache\Cache');
+    }
+
+    protected function zendCacheExists()
+    {
+        return class_exists('Zend\Cache\Manager');
+    }
+
+    protected function redisCacheExists()
+    {
+        return class_exists('Predis\Client') || class_exists('Redis');
+    }
+
+    private function setRealFetcherForCacheFetcher(ContainerBuilder $container, $fetcherConfig, LoaderInterface $loader)
+    {
+        $driverOptions = array();
+        if (isset($fetcherConfig['options'])) {
+            $driverOptions = $fetcherConfig['options'];
+
+            if (isset($driverOptions['method'])) {
+                if (!in_array($driverOptions['method'], array('oauth', 'api'))) {
+                    throw new InvalidConfigurationException('Invalid API driver specified (' . $driverOptions['method'] . '), available are: "oauth", "api"');
+                }
+                if (!$this->oauthExists()) {
+                    throw new InvalidConfigurationException('oauth fetcher requires "inori/twitter-app-bundle"');
+                }
+
+                $loader->load($driverOptions['method'] . '.yml');
+
+                $container->setAlias('knp_last_tweets.last_tweets_additional_fetcher', 'knp_last_tweets.last_tweets_fetcher.' . $driverOptions['method']);
+            } else {
+                $container->setAlias('knp_last_tweets.last_tweets_additional_fetcher', 'knp_last_tweets.last_tweets_fetcher.api');
+            }
+        }
+
+        return $driverOptions;
     }
 }

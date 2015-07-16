@@ -2,8 +2,17 @@
 
 namespace Knp\Bundle\LastTweetsBundle\Twig\Extension;
 
+use Knp\Bundle\LastTweetsBundle\Helper\TweetUrlizeHelper;
+
 class TweetUrlizeTwigExtension extends \Twig_Extension
 {
+    private $helper;
+
+    public function __construct(TweetUrlizeHelper $helper)
+    {
+        $this->helper = $helper;
+    }
+
     public function getFilters()
     {
         return array(
@@ -13,27 +22,7 @@ class TweetUrlizeTwigExtension extends \Twig_Extension
 
     public function filterTweet($text, $target = null)
     {
-        return self::urlize($text, $target);
-    }
-
-    /**
-     * Replace urls, #hastags and @mentions by their urls
-     * Should be moved to a Renderer class in order for it to be used by 
-     * something else than twig
-     * 
-     * @param string $text A tweet
-     * @param string $target Link target attribute
-     * @return string the urlized tweed
-     */
-    static public function urlize($text, $target = null)
-    {
-        $target = $target === null ? '' : ' target="' . $target . '"';
-        $text = preg_replace("#(^|[\n ])([\w]+?://[\w]+[^ \"\n\r\t< ]*)#", "\\1<a href=\"\\2\"".$target.">\\2</a>", $text);
-        $text = preg_replace("#(^|[\n ])((www|ftp)\.[^ \"\t\n\r< ]*)#", "\\1<a href=\"http://\\2\"".$target.">\\2</a>", $text);
-        $text = preg_replace("/@(\w+)/", "<a href=\"http://twitter.com/\\1\"".$target.">@\\1</a>", $text);
-        $text = preg_replace("/([^&]|^)#(\w+)/", "\\1<a href=\"http://twitter.com/search/\\2\"".$target.">#\\2</a>", $text);
-
-        return $text;
+        return TweetUrlizeHelper::urlize($text);
     }
 
     public function getName()

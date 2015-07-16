@@ -1,5 +1,11 @@
 # KnpLastTweetsBundles
 
+## Warning
+
+the bundle is working only with OAuth driver because of [twitter api v.1 retirement](https://dev.twitter.com/blog/api-v1-is-retired)
+old users needs update ``abraham/twitteroauth`` using ``composer update abraham/twitteroauth``
+
+
 This Symfony2 bundle will allow you to easily add a visual widget with the
 last tweets of the Twitter users to your page.
 
@@ -82,6 +88,23 @@ knp_last_tweets:
         driver: oauth
 ```
 
+### Doctrine Cache driver
+
+The `doctrine_driver` uses [DoctrineCache](https://github.com/doctrine/cache).
+First you should configure and install it.
+
+Then you are freely to set it in config:
+```jinja
+# app/config.yml
+knp_last_tweets:
+    fetcher:
+        driver: doctrine_cache
+        options:
+            cache_service: my_doctrine_cache_service #must be a valid doctrine cache
+```
+
+you could use [LiipDoctrineCacheBundle](https://github.com/liip/LiipDoctrineCacheBundle) for configuring your caches.
+
 ### Zend_Cache driver
 
 The `zend_cache` driver uses Zend_Cache to cache the last tweets in a Zend_Cache_Backend (file, APC, memcached…).
@@ -109,7 +132,7 @@ knp_last_tweets:
         driver: zend_cache
         options:
             cache_name: knp_last_tweets
-            method: api // or oauth
+            method: api # or oauth
 ```
 
 This will only call the twitter api after a minimum of 300 seconds.
@@ -166,7 +189,7 @@ knp_last_tweets:
 ### Recommendations
 
 * Use the `array` driver in development (edit your `app/config_dev.yml` file)
-* Use the `zend_cache` driver in production (edit your `app/config.yml` file)
+* Use the `zend_cache` or `doctrine_cache` driver in production (edit your `app/config.yml` file)
 * Use the `force-fetch` command in a cron job in production
 * Use HTTP caching if you know what this is about and if performance is really important to you!
 * Use the `oauth` driver if you have problems with limits.
@@ -193,3 +216,7 @@ and use the following code in your templates:
 ## Credits
 
 * Initial work has been done by [KnpLabs](http://knplabs.com/)
+
+## License
+
+`KnpLastTweetsBundle` is released under the MIT License. See the bundled LICENSE file for details.
